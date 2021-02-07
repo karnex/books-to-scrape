@@ -1,7 +1,7 @@
 import os
 import pathlib
-import urllib
 import requests
+import urllib
 
 from bs4 import BeautifulSoup
 
@@ -9,6 +9,41 @@ from bs4 import BeautifulSoup
 PROJECT_DIRECTORY = pathlib.Path().absolute()
 PRODUCTS_DIRECTORY = os.path.join(PROJECT_DIRECTORY, 'products')
 THUMBNAILS_DIRECTORY = os.path.join(PRODUCTS_DIRECTORY, 'thumbnails')
+
+
+def save_csv(data_frame, csv_file):
+    """
+    From the data frame and the scsv file name, add data into the csv file
+    """
+    if os.path.exists(csv_file):
+
+        # Append data into the existing csv file
+        data_frame.to_csv(csv_file, mode='a', header=False)
+
+    else:
+
+        # Create the csv file and add data inside
+        data_frame.to_csv(csv_file)
+
+
+def save_thumbnail(data_dict):
+    """
+    From the data dictionary, save the thumbnail to a local directory
+    """
+    # Save that image and rename the filename with the book title
+    filename = data_dict['title'].replace(' ', '').replace('\n', '').replace('/', '') + \
+               os.path.splitext(data_dict['image_url'])[1]
+
+    # Declare the category directory and create it when needed
+    category_directory = os.path.join(THUMBNAILS_DIRECTORY, data_dict['category'])
+    if not os.path.exists(category_directory):
+        os.mkdir(category_directory)
+
+    try:
+        urllib.request.urlretrieve(data_dict['image_url'], os.path.join(category_directory, filename))
+    except Exception as e:
+        print(e)
+        pass
 
 
 def collect_category_url_from_homepage(home_page):
@@ -29,15 +64,8 @@ def collect_category_url_from_homepage(home_page):
         # Extract useful data and add them into the dictionary
         category_tags = soup.find('ul', {'class': 'nav-list'}).find('ul').findAll('a')
 
-        dict_to_return = {}
-
-        for category_tag in category_tags:
-
-            # dict_to_return.update({category_tag.text: home_page + category_tag['href']})
-            dict_to_return[category_tag.text] = home_page + category_tag['href']
-
-        # Finally, return the dictionary
-        return dict_to_return
+        # Finally, return a dictionary with the category as key and the category URL as value
+        return {category_tag.text: home_page + category_tag['href'] for category_tag in category_tags}
 
     # Otherwise when an error is occurs, return an exception with the status code
     else:
@@ -70,12 +98,11 @@ def collect_product_url_from_category(category_page):
 
             product_tags = soup.find('section').findAll('div', {'class': 'image_container'})
 
-            for product_tag in product_tags:
-                list_to_return.append(category_page + '/../' + product_tag.find('a')['href'])
+            list_to_return += [f"{category_page}/../{product_tag.find('a')['href']}" for product_tag in product_tags]
 
             i += 1
 
-            # Otherwise when an error is occurs
+        # Otherwise when an error is occurs
         else:
 
             break  # Leave the loop
@@ -96,54 +123,24 @@ def collect_data_from_product(product_page):
         # Format the response to encoding utf-8
         response.encoding = 'utf-8'
 
-        # Parse the returned content and initialize the dictionary to return
+        # Parse the returned content
         soup = BeautifulSoup(response.text, 'html.parser')
-        dict_to_return = {'product_page_url': product_page}
-
-        # Extract useful data and add them into the dictionary
+        # Collect useful data
         upc = soup.find('table', {'class': 'table-striped'}).findAll('td')[0].text
-        dict_to_return.update({'universal_product_code': upc})
-
         title = soup.find('div', {'class': 'product_main'}).find('h1').text
-        dict_to_return.update({'title': title})
-
         price_incl_tax = soup.find('table', {'class': 'table-striped'}).findAll('td')[3].text
-        dict_to_return.update({'price_including_tax': price_incl_tax})
-
         price_excl_tax = soup.find('table', {'class': 'table-striped'}).findAll('td')[2].text
-        dict_to_return.update({'price_excluding_tax': price_excl_tax})
-
         availability = soup.find('table', {'class': 'table-striped'}).findAll('td')[5].text
-        dict_to_return.update({'number_available': availability})
-
         description = soup.find('article', {'class': 'product_page'}).findAll('p')[3].text
-        dict_to_return.update({'product_description': description})
-
         category = soup.find('ul', {'class': 'breadcrumb'}).findAll('li')[2].find('a').text
-        dict_to_return.update({'category': category})
-
         review = soup.find('div', {'class': 'product_main'}).find('p', {'class': 'star-rating'})['class'][1]
-        dict_to_return.update({'review_rating': review})
-
         img_url = soup.find('div', {'thumbnail'}).find('img')['src']
-        dict_to_return.update({'image_url': product_page + '/../' + img_url})
 
-        # Save that image and rename the filename with the book title
-        filename = title.replace(' ', '').replace('\n', '') + str(os.path.splitext(img_url)[1])
-
-        # Declare the category directory and create it when needed
-        category_directory = os.path.join(THUMBNAILS_DIRECTORY, category)
-        if not os.path.exists(category_directory):
-            os.mkdir(category_directory)
-
-        try:
-            urllib.request.urlretrieve(product_page + '/../' + img_url, os.path.join(category_directory, filename))
-        except Exception as e:
-            print(e)
-            pass
-
-        # Finally, return the dictionary
-        return dict_to_return
+        # Finally, return a dictionary containing the collected data
+        return {'product_page_url': product_page, 'universal_product_code': upc, 'title': title,
+                'price_including_tax': price_incl_tax, 'price_excluding_tax': price_excl_tax,
+                'number_available': availability, 'product_description': description, 'category': category,
+                'review_rating': review, 'image_url': f'{product_page}/../{img_url}'}
 
     # Otherwise when an error occurs, return an exception with the status code
     else:

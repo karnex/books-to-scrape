@@ -1,9 +1,11 @@
 import os
-import pathlib
+from threading import Thread
+
 import pandas as pd
+import pathlib
 
 from scraper.collect_data import collect_category_url_from_homepage, collect_product_url_from_category, \
-    collect_data_from_product
+    collect_data_from_product, save_thumbnail, save_csv
 
 # Project directories
 PROJECT_DIRECTORY = pathlib.Path().absolute()
@@ -31,12 +33,14 @@ if __name__ == '__main__':
             # Generate the DataFrame from the data dictionary
             df = pd.DataFrame([data_dict])
 
-            if os.path.exists(csv_file):
+            try:
+                Thread(target=save_csv, args=[df, csv_file]).start()
+            except Exception as e:
+                print(e)
+                pass
 
-                # Append data into the existing csv file
-                df.to_csv(csv_file, mode='a', header=False)
-
-            else:
-
-                # Create the csv file and add data inside
-                df.to_csv(csv_file)
+            try:
+                Thread(target=save_thumbnail, args=[data_dict]).start()
+            except Exception as e:
+                print(e)
+                pass
