@@ -1,29 +1,35 @@
+import csv
 import os
 import pathlib
 import requests
-import urllib
+import urllib.request
 
 from bs4 import BeautifulSoup
 
 # Project directories
 PROJECT_DIRECTORY = pathlib.Path().absolute()
-PRODUCTS_DIRECTORY = os.path.join(PROJECT_DIRECTORY, 'products')
-THUMBNAILS_DIRECTORY = os.path.join(PRODUCTS_DIRECTORY, 'thumbnails')
+THUMBNAILS_DIRECTORY = os.path.join(PROJECT_DIRECTORY, 'thumbnails')
 
 
-def save_csv(data_frame, csv_file):
+def save_csv(data_dict, csv_file):
     """
-    From the data frame and the scsv file name, add data into the csv file
+    From the data dictionary and the scsv file name, add data into the csv file
     """
     if os.path.exists(csv_file):
-
         # Append data into the existing csv file
-        data_frame.to_csv(csv_file, mode='a', header=False)
-
+        access_right = 'a'
     else:
-
         # Create the csv file and add data inside
-        data_frame.to_csv(csv_file)
+        access_right = 'w'
+
+    with open(csv_file, access_right, newline='\n') as file:
+        writer = csv.DictWriter(file, fieldnames=['product_page_url', 'universal_product_code', 'title',
+                                                  'price_including_tax', 'price_excluding_tax', 'number_available',
+                                                  'product_description', 'category', 'review_rating', 'image_url'])
+        if access_right == 'w':
+            writer.writeheader()
+
+        writer.writerow(data_dict)
 
 
 def save_thumbnail(data_dict):
@@ -58,7 +64,7 @@ def collect_category_url_from_homepage(home_page):
         # Format the response to encoding utf-8
         response.encoding = 'utf-8'
 
-        # Parse the returned content and initialize the dictionary to return
+        # Parse the returned content
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # Extract useful data and add them into the dictionary
@@ -67,7 +73,7 @@ def collect_category_url_from_homepage(home_page):
         # Finally, return a dictionary with the category as key and the category URL as value
         return {category_tag.text: home_page + category_tag['href'] for category_tag in category_tags}
 
-    # Otherwise when an error is occurs, return an exception with the status code
+    # Otherwise when an error occurs, return the status code as an exception
     else:
 
         raise Exception(response.status_code)
@@ -75,7 +81,7 @@ def collect_category_url_from_homepage(home_page):
 
 def collect_product_url_from_category(category_page):
     """
-    From the category page, colelct and return every product URL as a list
+    From the category page, collect and return every product URL as a list
     """
     list_to_return = []  # List that will be returned
     i = 1  # var to increment
@@ -83,9 +89,11 @@ def collect_product_url_from_category(category_page):
     while True:
 
         if i > 1:
-            response = requests.get(category_page.replace('index.html', f'page-{i}.html'))
+            current_page = category_page.replace('index.html', f'page-{i}.html')
         else:
-            response = requests.get(category_page)
+            current_page = category_page
+        # According to the current page, get the response
+        response = requests.get(current_page)
 
         # When a valid response is returned
         if response.ok:
@@ -102,7 +110,7 @@ def collect_product_url_from_category(category_page):
 
             i += 1
 
-        # Otherwise when an error is occurs
+        # Otherwise, when an error occurs
         else:
 
             break  # Leave the loop
@@ -117,7 +125,7 @@ def collect_data_from_product(product_page):
     """
     response = requests.get(product_page)
 
-    # When a valid response is returned
+    # When the success status is returned
     if response.ok:
 
         # Format the response to encoding utf-8
@@ -125,6 +133,7 @@ def collect_data_from_product(product_page):
 
         # Parse the returned content
         soup = BeautifulSoup(response.text, 'html.parser')
+
         # Collect useful data
         upc = soup.find('table', {'class': 'table-striped'}).findAll('td')[0].text
         title = soup.find('div', {'class': 'product_main'}).find('h1').text
@@ -142,7 +151,7 @@ def collect_data_from_product(product_page):
                 'number_available': availability, 'product_description': description, 'category': category,
                 'review_rating': review, 'image_url': f'{product_page}/../{img_url}'}
 
-    # Otherwise when an error occurs, return an exception with the status code
+    # Otherwise when an error occurs, return the status code as an exception
     else:
 
         raise Exception(response.status_code)
