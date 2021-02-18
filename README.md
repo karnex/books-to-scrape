@@ -8,8 +8,8 @@
 2. Initialize git for the project: `git init`
 3. Create the connection with the repository, BTS is the short name as an example: `git remote add BTS https://github.com/karnex/books-to-scrape.git`
 4. Clone the repository to the local: `git clone https://github.com/karnex/books-to-scrape.git`
-5.  - For Windows devices, install the requirements like this: `pip install requirements.txt`
-    - For Unix devices, install the requirements like that : `pip3 install -r requirements.txt`
+5.  - For Windows devices, use `pip` to install the requirements like this: `pip install -r requirements.txt`
+    - For Unix devices, use `pip3` to install the requirements like that : `pip3 install -r requirements.txt`
 
 #### How to use the project
 

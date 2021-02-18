@@ -22,8 +22,8 @@ def save_csv(data_dict, csv_file):
         # Create the csv file and add data inside
         access_right = 'w'
 
-    with open(csv_file, access_right, newline='\n') as file:
-        writer = csv.DictWriter(file, fieldnames=[
+    with open(csv_file, access_right, newline='\n', errors='replace') as file:
+        writer = csv.DictWriter(file, delimiter=';', fieldnames=[
             'product_page_url', 'universal_product_code', 'title',
             'price_including_tax', 'price_excluding_tax', 'number_available',
             'product_description', 'category', 'review_rating', 'image_url'])
