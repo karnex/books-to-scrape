@@ -11,6 +11,9 @@ CSV_DIRECTORY = os.path.join(PROJECT_DIRECTORY, 'csv')
 
 
 def main():
+    """
+    Main function where all the website will be scraped
+    """
     # Get every categories as a dict
     ctg_dict = collect_category_url_from_homepage('http://books.toscrape.com/')
 
@@ -30,17 +33,15 @@ def main():
 
             try:
                 save_csv(data_dict, csv_file)
-            except Exception as e:
-                print(e)
-                pass
+            except Exception as csv_error:
+                print(csv_error)
 
             try:
                 save_thumbnail(data_dict['category'],
                                data_dict['universal_product_code'],
                                data_dict['image_url'])
-            except Exception as e:
-                print(e)
-                pass
+            except Exception as thumbnail_error:
+                print(thumbnail_error)
 
 
 if __name__ == '__main__':

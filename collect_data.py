@@ -1,8 +1,8 @@
 import csv
 import os
 import pathlib
-import requests
 import urllib.request
+import requests
 
 from bs4 import BeautifulSoup
 
@@ -22,7 +22,8 @@ def save_csv(data_dict, csv_file):
         # Create the csv file and add data inside
         access_right = 'w'
 
-    with open(csv_file, access_right, newline='\n', errors='replace') as file:
+    with open(csv_file, access_right, newline='\n',
+              errors='replace', encoding='utf-8-sig') as file:
         writer = csv.DictWriter(file, delimiter=';', fieldnames=[
             'product_page_url', 'universal_product_code', 'title',
             'price_including_tax', 'price_excluding_tax', 'number_available',
@@ -50,7 +51,6 @@ def save_thumbnail(folder_name, filename, img_url):
                                    os.path.join(ctg_directory, final_name))
     except Exception as e:
         print(e)
-        pass
 
 
 def collect_category_url_from_homepage(home_page):
