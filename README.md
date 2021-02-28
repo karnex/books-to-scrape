@@ -4,8 +4,6 @@
 
 #### How to configure the project
 
-Ajouter l'environnement virtuel
-
 1. Into the terminal, go to the directory of your choice: `cd path_of_your_choice`
 2. Initialize git for the project: `git init`
 3. Create the connection with the repository, BTS is the short name as an example: `git remote add BTS https://github.com/karnex/books-to-scrape.git`
